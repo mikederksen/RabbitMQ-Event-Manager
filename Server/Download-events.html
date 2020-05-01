@@ -52,7 +52,7 @@
                     <div class="row mx-0 mb-2"><button id="retrieve-button" type="submit" class="btn btn-primary float-right ml-auto">Retrieve events</button></div>
                 </form>
 
-                <div class="row mx-0 mb-4"><button id="download-button" class="btn btn-primary float-right ml-auto">Download JSON</button></div>
+                <div class="row mx-0 mb-4"><button disabled id="download-button" class="btn btn-primary float-right ml-auto">Download JSON</button></div>
 
 
                 <div class="row mx-0 text-secondary">
@@ -101,6 +101,8 @@
             $('#info-download-result').addClass('text-success');
 
             console.log('request sent succesfully', data);
+
+            $('#download-button').prop('disabled', false);
 
             var responseJson = JSON.stringify(data, null, 2);
             events.json = responseJson;
@@ -153,24 +155,46 @@
             downloadEvents(username, password, vhost, queue, count);
         }
 
+        function download(filename, data) {
+            var blob = new Blob([data], { type: 'application/json' });
+
+            if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveBlob(blob, filename);
+            }
+            else {
+                var elem = window.document.createElement('a');
+                elem.href = window.URL.createObjectURL(blob);
+                elem.download = filename;
+                document.body.appendChild(elem);
+                elem.click();
+                document.body.removeChild(elem);
+            }
+        }
+
+        function downloadJson() {
+            download('events.json', events.json);
+        }
+
         function activateValidation() {
             const form = document.getElementById('event-form');
-    
+
             // Loop over them and prevent submission
             form.addEventListener('submit', function (event) {
                 if (form.checkValidity() === true) {
                     showEventsFromQueue();
                 }
-    
+
                 event.preventDefault();
                 event.stopPropagation();
-    
+
                 form.classList.add('was-validated');
             }, false);
         }
 
         activateValidation();
         hljs.initHighlightingOnLoad();
+
+        $('#download-button').click(downloadJson);
     </script>
 </body>
 
