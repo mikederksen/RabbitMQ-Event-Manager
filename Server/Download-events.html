@@ -12,36 +12,55 @@
     <div class="row h-100">
         <div class="col-md-4 border-right">
             <div class="p-2">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" class="form-control" id="username" placeholder="guest">
-                </div>
+                <form id="event-form" class="needs-validation" novalidate>
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input required type="text" class="form-control" id="username" placeholder="guest">
 
-                <div class="form-group">
-                    <label for="password">Password (over http since this is default RabbitMQ behavior)</label>
-                    <input type="password" class="form-control" id="password" placeholder="guest">
-                </div>
+                        <div class="invalid-feedback">Please enter an username</div>
+                    </div>
 
-                <div class="form-group">
-                    <label for="vhost">Virtual host (include the '/' character)</label>
-                    <input type="text" class="form-control" id="vhost" placeholder="/Test">
-                </div>
+                    <div class="form-group">
+                        <label for="password">Password (over http since this is default RabbitMQ behavior)</label>
+                        <input required type="password" class="form-control" id="password" placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;">
 
-                <div class="form-group">
-                    <label for="queue">Queue</label>
-                    <input type="text" class="form-control" id="queue" placeholder="Queue name">
-                </div>
+                        <div class="invalid-feedback">Please enter a password</div>
+                    </div>
 
-                <div class="form-group">
-                    <label for="count">Amount of events</label>
-                    <input type="number" class="form-control" id="count" placeholder="5">
-                </div>
+                    <div class="form-group">
+                        <label for="vhost">Virtual host (include the '/' character)</label>
+                        <input required type="text" class="form-control" id="vhost" placeholder="/Test">
 
-                <div class="row mx-0 mb-2"><button id="retrieve-button" class="btn btn-primary float-right ml-auto">Retrieve events</button></div>
+                        <div class="invalid-feedback">Please enter a vhost</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="queue">Queue</label>
+                        <input required type="text" class="form-control" id="queue" placeholder="Queue name">
+
+                        <div class="invalid-feedback">Please enter a queue</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="count">Amount of events</label>
+                        <input required type="number" class="form-control" id="count" placeholder="5">
+
+                        <div class="invalid-feedback">Please enter a count</div>
+                    </div>
+
+
+                    <div class="row mx-0 mb-2"><button id="retrieve-button" type="submit" class="btn btn-primary float-right ml-auto">Retrieve events</button></div>
+                </form>
+
                 <div class="row mx-0 mb-4"><button id="download-button" class="btn btn-primary float-right ml-auto">Download JSON</button></div>
 
-                <div class="row mx-0 text-secondary"><p class="w-100 text-right" id="info-download-url"></p></div>
-                <div class="row mx-0"><p class="w-100 text-right" id="info-download-result"></p></div>
+
+                <div class="row mx-0 text-secondary">
+                    <p class="w-100 text-right" id="info-download-url"></p>
+                </div>
+                <div class="row mx-0">
+                    <p class="w-100 text-right" id="info-download-result"></p>
+                </div>
             </div>
         </div>
 
@@ -52,11 +71,11 @@
         </div>
     </div>
 
-
     <script src="https://code.jquery.com/jquery-3.5.0.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.1/jquery.validate.min.js"></script>
 
     <script>
         // Javascript included directly so you only have to copy this html-file
@@ -66,21 +85,21 @@
         function clearDownloadResult() {
             $('#info-download-result').removeClass('text-danger');
             $('#info-download-result').removeClass('text-success');
-            
+
             $('#info-download-result').html('');
         }
 
         function downloadError(response) {
             $('#info-download-result').html('Error while sending request. Check console for more details');
             $('#info-download-result').addClass('text-danger');
-            
+
             console.log('error while sending request', response);
         }
 
         function downloadSucces(data) {
             $('#info-download-result').html('Events retrieved successfully');
             $('#info-download-result').addClass('text-success');
-            
+
             console.log('request sent succesfully', data);
 
             var responseJson = JSON.stringify(data, null, 2);
@@ -92,14 +111,14 @@
                 $('pre code').each(function (i, e) { hljs.highlightBlock(e) });
             });
         }
-        
+
         function downloadComplete() {
             $('#retrieve-button').prop('disabled', false);
         }
 
         function downloadEvents(username, password, vhost, queue, count) {
             clearDownloadResult();
-            
+
             const encodedQueue = encodeURIComponent(queue);
             const encodedVhost = encodeURIComponent(vhost);
 
@@ -126,16 +145,32 @@
 
         function showEventsFromQueue() {
             const username = $('#username').val();
-            const password =  $('#password').val();
-            const vhost =  $('#vhost').val();
-            const queue =  $('#queue').val();
-            const count =  $('#count').val();
+            const password = $('#password').val();
+            const vhost = $('#vhost').val();
+            const queue = $('#queue').val();
+            const count = $('#count').val();
 
             downloadEvents(username, password, vhost, queue, count);
         }
 
+        function activateValidation() {
+            const form = document.getElementById('event-form');
+    
+            // Loop over them and prevent submission
+            form.addEventListener('submit', function (event) {
+                if (form.checkValidity() === true) {
+                    showEventsFromQueue();
+                }
+    
+                event.preventDefault();
+                event.stopPropagation();
+    
+                form.classList.add('was-validated');
+            }, false);
+        }
+
+        activateValidation();
         hljs.initHighlightingOnLoad();
-        $('#retrieve-button').click(showEventsFromQueue);
     </script>
 </body>
 
