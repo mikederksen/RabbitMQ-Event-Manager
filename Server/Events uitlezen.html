@@ -1,0 +1,142 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>Event download</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/default.min.css">
+</head>
+
+<body>
+    <div class="row h-100">
+        <div class="col-md-4 border-right">
+            <div class="p-2">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control" id="username" placeholder="guest">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password (over http since this is default RabbitMQ behavior)</label>
+                    <input type="password" class="form-control" id="password" placeholder="guest">
+                </div>
+
+                <div class="form-group">
+                    <label for="vhost">Virtual host (include the '/' character)</label>
+                    <input type="text" class="form-control" id="vhost" placeholder="/Test">
+                </div>
+
+                <div class="form-group">
+                    <label for="queue">Queue</label>
+                    <input type="text" class="form-control" id="queue" placeholder="Queue name">
+                </div>
+
+                <div class="form-group">
+                    <label for="count">Amount of events</label>
+                    <input type="number" class="form-control" id="count" placeholder="5">
+                </div>
+
+                <div class="row mx-0 mb-2"><button id="retrieve-button" class="btn btn-primary float-right ml-auto">Retrieve events</button></div>
+                <div class="row mx-0 mb-4"><button id="download-button" class="btn btn-primary float-right ml-auto">Download JSON</button></div>
+
+                <div class="row mx-0 text-secondary"><p class="float-right ml-auto" id="info-download-url"></p></div>
+                <div class="row mx-0"><p class="float-right ml-auto" id="info-download-result"></p></div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="p-2">
+                <pre><code id='event-output' class='language-json'></code></pre>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.5.0.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js"></script>
+
+    <script>
+        // Javascript included directly so you only have to copy this html-file
+
+        let events = {};
+
+        function clearDownloadResult() {
+            $('#info-download-result').removeClass('text-danger');
+            $('#info-download-result').removeClass('text-success');
+            
+            $('#info-download-result').html('');
+        }
+
+        function downloadError(response) {
+            $('#info-download-result').html('Error while sending request. Check console for more details');
+            $('#info-download-result').addClass('text-danger');
+            
+            console.log('error while sending request', response);
+        }
+
+        function downloadSucces(data) {
+            $('#info-download-result').html('Events retrieved successfully');
+            $('#info-download-result').addClass('text-success');
+            
+            console.log('request sent succesfully', data);
+
+            var responseJson = JSON.stringify(data, null, 2);
+            events.json = responseJson;
+
+            $('#event-output').html(events.json);
+
+            $(document).ready(function () {
+                $('pre code').each(function (i, e) { hljs.highlightBlock(e) });
+            });
+        }
+        
+        function downloadComplete() {
+            $('#retrieve-button').prop('disabled', false);
+        }
+
+        function downloadEvents(username, password, vhost, queue, count) {
+            clearDownloadResult();
+            
+            const encodedQueue = encodeURIComponent(queue);
+            const encodedVhost = encodeURIComponent(vhost);
+
+            const url = 'http://127.0.0.1:15672/api/queues/' + encodedVhost + '/' + encodedQueue + '/get';
+
+            $('#info-download-url').html('Initiated download from url: ' + url);
+
+            $('#retrieve-button').prop('disabled', true);
+            $('#event-output').html('');
+
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: '{"count":' + count + ',"ackmode":"ack_requeue_true","encoding":"auto"}',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("Authorization", "Basic " + btoa(username + ':' + password));
+                },
+                success: downloadSucces,
+                error: downloadError,
+                complete: downloadComplete,
+                dataType: 'json'
+            });
+        }
+
+        function showEventsFromQueue() {
+            const username = $('#username').val();
+            const password =  $('#password').val();
+            const vhost =  $('#vhost').val();
+            const queue =  $('#queue').val();
+            const count =  $('#count').val();
+
+            downloadEvents(username, password, vhost, queue, count);
+        }
+
+        hljs.initHighlightingOnLoad();
+        $('#retrieve-button').click(showEventsFromQueue);
+    </script>
+</body>
+
+</html>
